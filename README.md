@@ -4,7 +4,9 @@ Integrate Claude with Any OpenAI SDK Compatible Chat Completion API - OpenAI, Pe
 
 This implements the Model Context Protocol Server. Learn more: [https://modelcontextprotocol.io](https://modelcontextprotocol.io)
 
-This is a TypeScript-based MCP server that implements an implementation into any OpenAI SDK Compatible Chat Completions API.
+This MCP server is available in two implementations:
+- TypeScript: Direct integration with Claude Desktop via MCP
+- Python: Standalone server implementation with SSE support
 
 It has one tool, `chat` which relays a question to a configured AI Chat Provider.
 
@@ -14,8 +16,11 @@ It has one tool, `chat` which relays a question to a configured AI Chat Provider
 
 ## Development
 
+### TypeScript Implementation
+
 Install dependencies:
 ```bash
+cd typescript
 npm install
 ```
 
@@ -29,23 +34,44 @@ For development with auto-rebuild:
 npm run watch
 ```
 
-## Installation
+### Python Implementation
+
+Install dependencies:
+```bash
+cd python
+pip install -r requirements.txt
+```
+
+Run the server:
+```bash
+python any-chat-completions-mcp-server.py --host 0.0.0.0 --port 8080
+```
+
+The server requires the following environment variables:
+- `AI_CHAT_KEY`: Your API key for the chat service
+- `AI_CHAT_NAME`: Name of the service (e.g., "OpenAI", "Perplexity")
+- `AI_CHAT_MODEL`: Model to use (e.g., "gpt-4", "sonar")
+- `AI_CHAT_BASE_URL`: Base URL of the API (e.g., "https://api.openai.com/v1", https://api.perplexity.ai)
+
+For testing, you can use the example client:
+```bash
+python example_client.py http://localhost:8080/sse
+```
+
+## Claude Desktop Integration (TypeScript)
 
 To add OpenAI to Claude Desktop, add the server config:
 
 On MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
-
-
 ```json
-
 {
   "mcpServers": {
     "chat-openai": {
       "command": "node",
       "args": [
-        "/path/to/any-chat-completions-mcp/build/index.js"
+        "/path/to/any-chat-completions-mcp/typescript/build/index.js"
       ],
       "env": {
         "AI_CHAT_KEY": "OPENAI_KEY",
@@ -61,13 +87,12 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 You can add multiple providers by referencing the same MCP server multiple times, but with different env arguments:
 
 ```json
-
 {
   "mcpServers": {
     "chat-pyroprompts": {
       "command": "node",
       "args": [
-        "/path/to/any-chat-completions-mcp/build/index.js"
+        "/path/to/any-chat-completions-mcp/typescript/build/index.js"
       ],
       "env": {
         "AI_CHAT_KEY": "PYROPROMPTS_KEY",
@@ -79,32 +104,20 @@ You can add multiple providers by referencing the same MCP server multiple times
     "chat-perplexity": {
       "command": "node",
       "args": [
-        "/path/to/any-chat-completions-mcp/build/index.js"
+        "/path/to/any-chat-completions-mcp/typescript/build/index.js"
       ],
       "env": {
         "AI_CHAT_KEY": "PERPLEXITY_KEY",
         "AI_CHAT_NAME": "Perplexity",
-        "AI_CHAT_MODEL": "llama-3.1-sonar-small-128k-online",
+        "AI_CHAT_MODEL": "sonar",
         "AI_CHAT_BASE_URL": "https://api.perplexity.ai"
-      }
-    },
-    "chat-openai": {
-      "command": "node",
-      "args": [
-        "/path/to/any-chat-completions-mcp/build/index.js"
-      ],
-      "env": {
-        "AI_CHAT_KEY": "OPENAI_KEY",
-        "AI_CHAT_NAME": "OpenAI",
-        "AI_CHAT_MODEL": "gpt-4o",
-        "AI_CHAT_BASE_URL": "https://api.openai.com/v1"
       }
     }
   }
 }
 ```
 
-With these three, you'll see a tool for each in the Claude Desktop Home:
+With these configurations, you'll see a tool for each in the Claude Desktop Home:
 
 ![Claude Desktop Home with Chat Tools](img/claude_desktop_home.png)
 
@@ -114,13 +127,25 @@ And then you can chat with other LLMs and it shows in chat like this:
 
 ### Debugging
 
+#### TypeScript Implementation
 Since MCP servers communicate over stdio, debugging can be challenging. We recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector), which is available as a package script:
 
 ```bash
+cd typescript
 npm run inspector
 ```
 
 The Inspector will provide a URL to access debugging tools in your browser.
+
+#### Python Implementation
+The Python server includes detailed logging that can be viewed in the terminal. You can also use the example client's debug mode:
+
+```bash
+python example_client.py http://localhost:8080/sse
+# Then type /debug to toggle debug mode
+```
+
+The server logs all requests and responses (with sensitive information redacted) to help with debugging.
 
 ### Acknowledgements
 
